@@ -143,8 +143,8 @@ void LaserDetect::getClusters(vector< double > ranges, vector< double > angles)
 	i=j;
     }
     
-    //cout << "count:" << count << endl;
-    
+    cout << "count:" << count << endl;
+    hokuyo_data.number = count;
     if (count == 0)
     {
 	for(int i=count; i<5; i++)
@@ -184,7 +184,7 @@ void LaserDetect::getClusters(vector< double > ranges, vector< double > angles)
 	{
 	    hokuyo_data.ranges[i] = DynObs_data_[i][0];
 	    hokuyo_data.angles[i] = DynObs_data_[i][1];
-	    hokuyo_data.number = count;
+	    //hokuyo_data.number = count;
 	}
 	DynObs_data_.clear();
 	hokuyo_pub.publish(hokuyo_data);
@@ -219,7 +219,7 @@ void LaserDetect::getClusters(vector< double > ranges, vector< double > angles)
 	{
 	    hokuyo_data.ranges[i] = DynObs_data_[i][0];
 	    hokuyo_data.angles[i] = DynObs_data_[i][1];
-	    hokuyo_data.number = count;
+	    //hokuyo_data.number = count;
 	}
 	for(int i=count; i<5; i++)
 	{
