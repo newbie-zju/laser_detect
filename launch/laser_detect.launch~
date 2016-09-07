@@ -1,0 +1,5 @@
+<launch>
+    <node pkg="laser_detect" type="laser_detect_node" name="laser_detect" output="screen">
+	<param name="laser_link" value="body"/>
+    </node>
+</launch>
