@@ -140,7 +140,7 @@ add_executable(laser_detect_node src/laser_detect_node.cpp src/laser_detect.cpp)
 
 ## Specify libraries to link a library or executable target against
  target_link_libraries(laser_detect_node
-   ${catkin_LIBRARIES}
+  ${catkin_LIBRARIES}
  )
 
 #############

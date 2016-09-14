@@ -1,5 +1,23 @@
+<?xml version="1.0"?>
 <launch>
-    <node pkg="laser_detect" type="laser_detect_node" name="laser_detect_node" output="screen">
-	<param name="laser_link" value="body"/>
+    <!--hokuyo node-->
+    <node pkg="hokuyo_node" type="hokuyo_node" name="hokuyo" respawn="false" output="screen">
+	<param name="calibrate_time" type="bool" value="false"/>
+	<param name="port" type="string" value="/dev/ttyACM0"/> 
+ 	<param name="intensity" type="bool" value="false"/>
+    </node> 
+
+    <!--laser_detect_node-->
+    <node pkg="laser_detect" type="laser_detect_node" name="laser_detect" output="screen">
+	<param name="laser_link_" value="laser"/>
+	<param name="minDist_" value="0.5"/>
+	<param name="maxDist_" value="5"/>
+	<param name="clusterThreshold_" value="2.0"/>
+	<param name="clusterNMin_" value="4"/>
+	<param name="clusterNMax_" value="50"/>
+	<param name="minWidth_" value="0.05"/>
+	<param name="maxWidth_" value="0.2"/>
+	
     </node>
+
 </launch>
