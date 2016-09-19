@@ -13,7 +13,11 @@
 #include <geometry_msgs/PointStamped.h>
 
 #include "laser_detect/DynObs.h"
+#include "obstacle_avoidance/Hokuyo.h"
+
+#include <Eigen/Eigen>
 using namespace std;
+using namespace Eigen;
 
 class Cluster{
     double x,y;
@@ -32,11 +36,13 @@ public:
     void matchClusters(vector<Cluster> clusters, double t);
     void getClusters(vector<double> ranges, vector<double> angles);
     void exchangeSort(vector<geometry_msgs::PointStamped> dynObs_points_, int count_);
+    void exchangeSort(vector<Eigen::Vector2d> dynObs_data_, int count_);
     
     
 private:
     ros::Publisher dynObs_pub;
     ros::Publisher marker_pub;
+    ros::Publisher hokuyo_pub;
     ros::Subscriber scan_sub;
     ros::NodeHandle nh_;
     ros::NodeHandle private_nh_;
@@ -55,6 +61,7 @@ private:
     //TODO:障碍物实际直径0.12m
     double minWidth; //障碍物直径下限(m)
     double maxWidth; //障碍物直径上限(m)
+    obstacle_avoidance::Hokuyo hokuyo_data;
     
 };
 

@@ -1,5 +1,5 @@
 #include "laser_detect/laser_detect.h"
-
+#include "obstacle_avoidance/Hokuyo.h"
 
 /****TODO: sensor_msgs/LaserScan
 std_msgs/Header header
@@ -17,10 +17,26 @@ float32[] intensities
 #define angleHead  (130.0*M_PI)/180
 #define angleEnd  (140.0*M_PI)/180
 #define VISUALIZE_DYNAMIC_OBSTACLES 1 //柱子
-
+#define DATA_SZ 5
 LaserDetect::LaserDetect(const ros::NodeHandle& nh, const ros::NodeHandle& private_nh):nh_(nh),private_nh_(private_nh),nh_param("~")
 {
     usescan =false;
+    hokuyo_data.ranges.resize(DATA_SZ);
+    hokuyo_data.angles.resize(DATA_SZ);
+    
+    hokuyo_data.ranges[0] = 999;
+    hokuyo_data.ranges[1] = 999;
+    hokuyo_data.ranges[2] = 999;
+    hokuyo_data.ranges[3] = 999;
+    hokuyo_data.ranges[4] = 999;
+	
+    hokuyo_data.angles[0] = 999;
+    hokuyo_data.angles[1] = 999;
+    hokuyo_data.angles[2] = 999;
+    hokuyo_data.angles[3] = 999;
+    hokuyo_data.angles[4] = 999;
+    hokuyo_data.number = 0;
+    
     nh_param.param<string>("laser_link_", laser_link, std::string("laser"));
     //最小探测距离
     nh_param.param<double>("minDist_",minDist,0.5);
@@ -39,6 +55,8 @@ LaserDetect::LaserDetect(const ros::NodeHandle& nh, const ros::NodeHandle& priva
     nh_param.param<double>("maxWidth_", maxWidth,0.2);
     
     dynObs_pub = nh_.advertise<laser_detect::DynObs>("dynamic_obstacles",1);
+    
+    hokuyo_pub = nh_.advertise<obstacle_avoidance::Hokuyo>("/hokuyo/pillar_data",1);
 #if VISUALIZE_DYNAMIC_OBSTACLES 
     marker_pub = nh_.advertise<visualization_msgs::MarkerArray>("/visualization_marker",1);
 #endif
@@ -69,7 +87,9 @@ void LaserDetect::getClusters(vector< double > ranges, vector< double > angles)
     geometry_msgs::PointStamped dynObs_laser;
     geometry_msgs::Point dynObs_ground;
     laser_detect::DynObs dynObs_points;
+    Vector2d DynObs_data;
     vector <geometry_msgs::PointStamped> dynObs_temp_points;
+    vector <Vector2d> DynObs_data_;
     
     for(unsigned int i=0; i<ranges.size(); i++)
     {
@@ -100,7 +120,11 @@ void LaserDetect::getClusters(vector< double > ranges, vector< double > angles)
 	    if(width <= maxWidth && width >= minWidth && dist <= maxDist && dist >= minDist)
 	    {
 		//激光坐标系下的点
-		float theta = (angles[j]+angles[i])/2; //
+		float theta = (angles[j]+angles[i])/2;
+		DynObs_data[0] = dist;
+		DynObs_data[1] = theta;
+		DynObs_data_.push_back(DynObs_data);
+		//
 		dynObs_laser.point.x = dist*cos(theta);
 		dynObs_laser.point.y = dist*sin(theta);
 		dynObs_laser.point.z = 0;
@@ -117,6 +141,15 @@ void LaserDetect::getClusters(vector< double > ranges, vector< double > angles)
 	}
 	i=j;
     }
+    
+    exchangeSort(DynObs_data_,count);
+    for(int i=0; i<count; i++)
+    {
+	hokuyo_data.ranges[i] = DynObs_data_[i][0];
+	hokuyo_data.angles[i] = DynObs_data_[i][1];
+	hokuyo_data.number = count;
+    }
+    hokuyo_pub.publish(hokuyo_data);
     
     exchangeSort(dynObs_temp_points, count);
     
@@ -182,6 +215,25 @@ void LaserDetect::exchangeSort(vector< geometry_msgs::PointStamped > dynObs_poin
 		temp=dynObs_points_[i];
 		dynObs_points_[i] = dynObs_points_[j];
 		dynObs_points_[j] = temp;
+	    }
+	}
+    }
+}
+
+void LaserDetect::exchangeSort(vector<Eigen::Vector2d> dynObs_data_, int count_)
+{
+    Vector2d temp;
+    for (int i = 0; i < (count_-1); i++)
+    {
+	for (int j=i+1; j < count_; j++)
+	{
+	    double dist_i = dynObs_data_[i][0];
+	    double dist_j = dynObs_data_[j][0];
+	    if (dist_j < dist_i)
+	    {
+		temp = dynObs_data_[i];
+		dynObs_data_[i] = dynObs_data_[j];
+		dynObs_data_[j] = temp;
 	    }
 	}
     }
