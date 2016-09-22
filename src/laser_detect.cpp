@@ -99,23 +99,24 @@ void LaserDetect::getClusters(vector< double > ranges, vector< double > angles)
 	    if (fabs(ranges[j+1]-ranges[j])>clusterThreshold)
 		break;
 	}
-	cout << "clusterThreshold:" << clusterThreshold << endl;
+	//cout << "clusterThreshold:" << clusterThreshold << endl;
+	//cout << "j-i:" << j-i << endl;
 	//满足打到障碍物上的点数在设定范围，且这两点不是激光首尾点
 	if((j-i)>=clusterNMin && (j-i) <= clusterNMax && i!=0 && j!=ranges.size()-1)
 	{
 	    int upperMid = ceil((float)(j+i)/2.); //正舍入
 	    int lowerMid = (j+i)/2; //负舍入
-	    cout << "i j:" << i << " " << j << endl;
+	    //cout << "i j:" << i << " " << j << endl;
 	    float dist = (ranges[upperMid]+ranges[lowerMid])/2;//该距离为障碍物到激光的平均距离
-	    cout << "dist:" << dist << endl;
+	    //cout << "dist:" << dist << endl;
 	    //float width = dist*(angles[j]-angles[i]);//l=r*theta
 	     
 	    double width = dist*tan(angles[j]-angles[i]);
 	    //double width2 = dist*abs(j-i)*0.00436332309619;
-	    cout << "width: " << width << endl;
+	    //cout << "width: " << width << endl;
 	    //cout << "width2: " << width2 << endl;
 	    //cout << "minWidth  maxWidth" << minWidth << " " << maxWidth << endl;
-	    
+	    //cout << "minDist" << minDist << endl;
 	    //满足障碍物直径在设定范围，且障碍物到激光的距离满足设定范围
 	    if(width <= maxWidth && width >= minWidth && dist <= maxDist && dist >= minDist)
 	    {
@@ -142,14 +143,93 @@ void LaserDetect::getClusters(vector< double > ranges, vector< double > angles)
 	i=j;
     }
     
-    exchangeSort(DynObs_data_,count);
-    for(int i=0; i<count; i++)
+    //cout << "count:" << count << endl;
+    
+    if (count == 0)
     {
-	hokuyo_data.ranges[i] = DynObs_data_[i][0];
-	hokuyo_data.angles[i] = DynObs_data_[i][1];
-	hokuyo_data.number = count;
+	for(int i=count; i<5; i++)
+	{
+	    hokuyo_data.ranges[i] = 999;
+	    hokuyo_data.angles[i] = 999;
+	}
+	DynObs_data_.clear();
+	hokuyo_pub.publish(hokuyo_data);
     }
-    hokuyo_pub.publish(hokuyo_data);
+	
+    else if(count > 5)
+    {
+	ROS_ERROR("Dynamic obstacles detected error! chose closest 5 dynobs!");
+	
+	Vector2d temp;
+	for (int i = 0; i < (count-1); i++)
+	{
+	    //cout << "count:" << count << endl;
+	    for (int j=i+1; j < count; j++)
+	    {
+		double dist_i = DynObs_data_[i][0];
+		double dist_j = DynObs_data_[j][0];
+		//cout << "dist_i:" << dist_i << endl;
+		//cout << "dist_j:" << dist_j << endl;
+		if (dist_j < dist_i)
+		{
+		    temp = DynObs_data_[i];
+		    DynObs_data_[i] = DynObs_data_[j];
+		    DynObs_data_[j] = temp;
+		    //cout << "temp:" << temp << endl;
+		}
+	    }
+	}
+	
+	for(int i=0; i<5; i++)
+	{
+	    hokuyo_data.ranges[i] = DynObs_data_[i][0];
+	    hokuyo_data.angles[i] = DynObs_data_[i][1];
+	    hokuyo_data.number = count;
+	}
+	DynObs_data_.clear();
+	hokuyo_pub.publish(hokuyo_data);
+	
+    }  
+    else
+    {
+	//cout << "count1:" << count << endl;
+	//cout << "DynObs_data_origin:" << DynObs_data_[0][0] << " "<< DynObs_data_[1][0] << endl;
+	//exchangeSort_(DynObs_data_,count);
+	Vector2d temp;
+	for (int i = 0; i < (count-1); i++)
+	{
+	    //cout << "count:" << count << endl;
+	    for (int j=i+1; j < count; j++)
+	    {
+		double dist_i = DynObs_data_[i][0];
+		double dist_j = DynObs_data_[j][0];
+		//cout << "dist_i:" << dist_i << endl;
+		//cout << "dist_j:" << dist_j << endl;
+		if (dist_j < dist_i)
+		{
+		    temp = DynObs_data_[i];
+		    DynObs_data_[i] = DynObs_data_[j];
+		    DynObs_data_[j] = temp;
+		    //cout << "temp:" << temp << endl;
+		}
+	    }
+	}
+	//cout << "DynObs_data_sort:" << DynObs_data_[0][0] << " "<< DynObs_data_[1][0] << endl;
+	for(int i=0; i<count; i++)
+	{
+	    hokuyo_data.ranges[i] = DynObs_data_[i][0];
+	    hokuyo_data.angles[i] = DynObs_data_[i][1];
+	    hokuyo_data.number = count;
+	}
+	for(int i=count; i<5; i++)
+	{
+	    hokuyo_data.ranges[i] = 999;
+	    hokuyo_data.angles[i] = 999;
+	}
+	DynObs_data_.clear();
+	hokuyo_pub.publish(hokuyo_data);
+    }    
+
     
     exchangeSort(dynObs_temp_points, count);
     
@@ -220,7 +300,7 @@ void LaserDetect::exchangeSort(vector< geometry_msgs::PointStamped > dynObs_poin
     }
 }
 
-void LaserDetect::exchangeSort(vector<Eigen::Vector2d> dynObs_data_, int count_)
+void LaserDetect::exchangeSort_(vector<Eigen::Vector2d> dynObs_data_, int count_)
 {
     Vector2d temp;
     for (int i = 0; i < (count_-1); i++)
@@ -229,11 +309,12 @@ void LaserDetect::exchangeSort(vector<Eigen::Vector2d> dynObs_data_, int count_)
 	{
 	    double dist_i = dynObs_data_[i][0];
 	    double dist_j = dynObs_data_[j][0];
-	    if (dist_j < dist_i)
+	    if (abs(dist_j - dist_i) < 0)
 	    {
 		temp = dynObs_data_[i];
 		dynObs_data_[i] = dynObs_data_[j];
 		dynObs_data_[j] = temp;
+		cout << "temp:" << temp << endl;
 	    }
 	}
     }

@@ -36,7 +36,7 @@ public:
     void matchClusters(vector<Cluster> clusters, double t);
     void getClusters(vector<double> ranges, vector<double> angles);
     void exchangeSort(vector<geometry_msgs::PointStamped> dynObs_points_, int count_);
-    void exchangeSort(vector<Eigen::Vector2d> dynObs_data_, int count_);
+    void exchangeSort_(vector<Eigen::Vector2d> dynObs_data_, int count_);
     
     
 private:
